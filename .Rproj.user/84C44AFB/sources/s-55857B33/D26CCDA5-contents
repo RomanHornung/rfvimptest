@@ -1,0 +1,29 @@
+M <- 500; h <- 8
+mygrid <- c(h/(h:(M-1)), (h:1)/M)
+plot(mygrid)
+M <- 500; h <- 20
+mygrid2 <- c(h/(h:(M-1)), (h:1)/M)
+points(1:length(mygrid2), mygrid2, col=2)
+
+
+whichval <- 450:500
+plot(whichval, mygrid[whichval], ylim=range(c(mygrid[whichval], mygrid2[whichval])))
+points(whichval, mygrid2[whichval], col=2)
+
+
+whichval <- 350:500
+plot(whichval, mygrid[whichval], ylim=range(c(mygrid[whichval], mygrid2[whichval])))
+points(whichval, mygrid2[whichval], col=2)
+
+
+
+whichval <- 1:150
+plot(whichval, mygrid[whichval], ylim=range(c(mygrid[whichval], mygrid2[whichval])))
+points(whichval, mygrid2[whichval], col=2)
+
+
+
+
+length(mygrid)
+length(mygrid2)
+

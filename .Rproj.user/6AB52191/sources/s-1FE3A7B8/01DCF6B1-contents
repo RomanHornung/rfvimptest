@@ -1,0 +1,301 @@
+## TO DO:
+
+# ?berlegen, welche Inputparameter ich verwenden soll.
+# Dann die Funktion entsprechend umgestalten.
+
+
+
+library(permimp)
+library(party)
+
+setvimp <- function(object, mod_call, M = 500, varnames = NULL, p0 = 0.06, p1 = 0.04, alpha = 0.05, beta = 0.2, A = 0.1, B = 10, h = 8, nperm = 1, ...,
+                    progressbar = TRUE,
+                    test = c("general", "twosample")[1],
+                    type = c("SPRT", "SAPT", "pval", "certain", "complete")[1]) {
+  starttime <- Sys.time()
+
+  if (any(inherits(object, "RandomForest", which = TRUE) == 0)) stop("Please fit object by party::cforest()")
+
+  if (progressbar) pb <- txtProgressBar(min = 1, max = M, initial = 1, width = 10, style = 3, char = "|")
+
+  if (type == "SPRT") {
+    A <- beta / (1 - alpha)
+    B <- (1 - beta) / alpha
+  }
+  if (type %in% c("SPRT", "SAPT")) {
+    logA <- log(A)
+    logB <- log(B)
+    help1 <- log((1 - p0) / (1 - p1))
+    help2 <- log((p1 * (1 - p0)) / (p0 * (1 - p1)))
+  }
+
+  stop_crits <- switch(type,
+                       SPRT = list((logA + 1:M * help1) / help2, (logB + 1:M * help1) / help2),
+                       SAPT = list((logA + 1:M * help1) / help2, (logB + 1:M * help1) / help2),
+                       pval = list(rep(h, times = M), rep(h, times = M)),
+                       certain = list(rep(alpha*M, times = M), M*alpha - M + 1:M),
+                       complete = NULL)
+
+  data <- cbind(object@data@get("response"), object@data@get("input"))
+  yname <- as.character(object@data@formula$response[-1])
+  xnames <- gsub(" ", "", unlist(strsplit(as.character(object@data@formula$input[-1]), "\\+")))
+  if (is.null(varnames)) varnames <- xnames
+
+  vimp_orig <- permimp(object, whichxnames = varnames, nperm = nperm, ..., asParty = TRUE, progressBar = FALSE)
+
+  permod_call <- mod_call
+  permod_call$data <- quote(permdat)
+
+  if (test == "general") {
+    testresult <-
+      lapply(varnames, function(v) {
+        permdat <- data
+        permvimps <- c()
+        for (m in 1:M) {
+          if (progressbar) {setTxtProgressBar(pb, m)}
+          if (m == 1 & progressbar) cat(" of variable", v)
+          permdat[, v] <- sample(permdat[, v])
+          permmod <- eval(permod_call)
+          permvimps <- c(permvimps, permimp(permmod, whichxnames = v, nperm = nperm, ..., asParty = TRUE, progressBar = FALSE)$values)
+          d <- sum(permvimps >= vimp_orig$values[v])
+          if (type == "certain") {
+            if (d > stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type %in% c("SPRT", "SAPT")) {
+            if (d >= stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type == "pval") {
+            if (d == h) {result <- paste0("p=", format(d/m, nsmall = 3)); break}
+          }
+        }
+        if (m == M) {
+          if (type == "pval" & d < h) {
+            result <- paste0("p=", format((d + 1) / (M + 1), nsmall = 3))
+          } else {
+            result <- paste0("p=", format(d/m, nsmall = 3))
+          }
+        }
+        if (progressbar) cat(" - finished", "\n")
+        c(result, ifelse(m < M, "yes", "no"), m)
+      })
+  } else if (test == "twosample") {
+    ntrees <- length(object@ensemble)
+    testresult <-
+      lapply(varnames, function(v) {
+        permdat <- data
+        permdat[, v] <- sample(permdat[, v])
+        permmod <- eval(permod_call)
+        permmodvimps <- permimp(permmod, whichxnames = v, nperm = nperm, ..., asParty = TRUE, progressBar = FALSE)
+        permvimps <- c()
+        for (m in 1:M) {
+          if (progressbar) {setTxtProgressBar(pb, m)}
+          if (m == 1 & progressbar) cat(" of variable", v)
+          permvimps <- c(permvimps, mean(c(vimp_orig$perTree[, v], permmodvimps$perTree[, v])[sample(1:(2*ntrees), ntrees)]))
+          d <- sum(permvimps >= vimp_orig$values[v])
+          if (type == "certain") {
+            if (d > stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type %in% c("SPRT", "SAPT")) {
+            if (d >= stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type == "pval") {
+            if (d == h) {result <- paste0("p=", format(d/m, nsmall = 3)); break}
+          }
+        }
+        if (m == M) {
+          if (type == "pval" & d < h) {
+            result <- paste0("p=", format((d + 1) / (M + 1), nsmall = 3))
+          } else {
+            result <- paste0("p=", format(d/m, nsmall = 3))
+          }
+        }
+        if (progressbar) cat(" - finished", "\n")
+        c(result, ifelse(m < M, "yes", "no"), m)
+      })
+  }
+  testresult <- do.call(rbind, testresult)
+  names(testresult) <- varnames
+  stoptime <- Sys.time()
+  time_elapsed <- difftime(stoptime, starttime, units = "secs")
+  return(list("varimp" = vimp_orig$values, "test result" = testresult[, 1], "stopped early" = testresult[, 2], "permutations performed" = testresult[, 3], "time elapsed" = time_elapsed))
+}
+
+
+
+
+rfvimptest <- function(object, Mmax = 500, varnames = NULL, p0 = 0.06, p1 = 0.04, alpha = 0.05, beta = 0.2, A = 0.1, B = 10, h = 8, nperm = 1, ...,
+                    progressbar = TRUE,
+                    test = c("general", "twosample")[1],
+                    type = c("SPRT", "SAPT", "pval", "certain", "complete")[1]) {
+  starttime <- Sys.time()
+
+  #if (any(inherits(object, "RandomForest", which = TRUE) == 0)) stop("Please fit object by party::cforest()")
+
+  if (progressbar) pb <- txtProgressBar(min = 1, max = M, initial = 1, width = 10, style = 3, char = "|")
+
+  if (type == "SPRT") {
+    A <- beta / (1 - alpha)
+    B <- (1 - beta) / alpha
+  }
+  if (type %in% c("SPRT", "SAPT")) {
+    logA <- log(A)
+    logB <- log(B)
+    help1 <- log((1 - p0) / (1 - p1))
+    help2 <- log((p1 * (1 - p0)) / (p0 * (1 - p1)))
+  }
+
+  stop_crits <- switch(type,
+                       SPRT = list((logA + 1:M * help1) / help2, (logB + 1:M * help1) / help2),
+                       SAPT = list((logA + 1:M * help1) / help2, (logB + 1:M * help1) / help2),
+                       pval = list(rep(h, times = M), rep(h, times = M)),
+                       certain = list(rep(alpha*M, times = M), M*alpha - M + 1:M),
+                       complete = NULL)
+
+  data <- cbind(object@data@get("response"), object@data@get("input"))
+  yname <- as.character(object@data@formula$response[-1])
+  xnames <- gsub(" ", "", unlist(strsplit(as.character(object@data@formula$input[-1]), "\\+")))
+  if (is.null(varnames)) varnames <- xnames
+
+  vimp_orig <- permimp(object, whichxnames = varnames, nperm = nperm, ..., asParty = TRUE, progressBar = FALSE)
+
+  permod_call <- mod_call
+  permod_call$data <- quote(permdat)
+
+  if (test == "general") {
+    testresult <-
+      lapply(varnames, function(v) {
+        permdat <- data
+        permvimps <- c()
+        for (m in 1:M) {
+          if (progressbar) {setTxtProgressBar(pb, m)}
+          if (m == 1 & progressbar) cat(" of variable", v)
+          permdat[, v] <- sample(permdat[, v])
+          permmod <- eval(permod_call)
+          permvimps <- c(permvimps, permimp(permmod, whichxnames = v, nperm = nperm, ..., asParty = TRUE, progressBar = FALSE)$values)
+          d <- sum(permvimps >= vimp_orig$values[v])
+          if (type == "certain") {
+            if (d > stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type %in% c("SPRT", "SAPT")) {
+            if (d >= stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type == "pval") {
+            if (d == h) {result <- paste0("p=", format(d/m, nsmall = 3)); break}
+          }
+        }
+        if (m == M) {
+          if (type == "pval" & d < h) {
+            result <- paste0("p=", format((d + 1) / (M + 1), nsmall = 3))
+          } else {
+            result <- paste0("p=", format(d/m, nsmall = 3))
+          }
+        }
+        if (progressbar) cat(" - finished", "\n")
+        c(result, ifelse(m < M, "yes", "no"), m)
+      })
+  } else if (test == "twosample") {
+    ntrees <- length(object@ensemble)
+    testresult <-
+      lapply(varnames, function(v) {
+        permdat <- data
+        permdat[, v] <- sample(permdat[, v])
+        permmod <- eval(permod_call)
+        permmodvimps <- permimp(permmod, whichxnames = v, nperm = nperm, ..., asParty = TRUE, progressBar = FALSE)
+        permvimps <- c()
+        for (m in 1:M) {
+          if (progressbar) {setTxtProgressBar(pb, m)}
+          if (m == 1 & progressbar) cat(" of variable", v)
+          permvimps <- c(permvimps, mean(c(vimp_orig$perTree[, v], permmodvimps$perTree[, v])[sample(1:(2*ntrees), ntrees)]))
+          d <- sum(permvimps >= vimp_orig$values[v])
+          if (type == "certain") {
+            if (d > stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type %in% c("SPRT", "SAPT")) {
+            if (d >= stop_crits[[1]][m]) {result <- "accept H0"; break} else if (d <= stop_crits[[2]][m]) {result <- "accept H1"; break}
+          } else if (type == "pval") {
+            if (d == h) {result <- paste0("p=", format(d/m, nsmall = 3)); break}
+          }
+        }
+        if (m == M) {
+          if (type == "pval" & d < h) {
+            result <- paste0("p=", format((d + 1) / (M + 1), nsmall = 3))
+          } else {
+            result <- paste0("p=", format(d/m, nsmall = 3))
+          }
+        }
+        if (progressbar) cat(" - finished", "\n")
+        c(result, ifelse(m < M, "yes", "no"), m)
+      })
+  }
+  testresult <- do.call(rbind, testresult)
+  names(testresult) <- varnames
+  stoptime <- Sys.time()
+  time_elapsed <- difftime(stoptime, starttime, units = "secs")
+  return(list("varimp" = vimp_orig$values, "test result" = testresult[, 1], "stopped early" = testresult[, 2], "permutations performed" = testresult[, 3], "time elapsed" = time_elapsed))
+}
+
+
+
+
+setwd("D:/Projects/SideProjects/PermVIM/Rpackage/setvimp_R_Package/setvimp/R/Trials")
+
+data(iris)
+ls()
+
+names(iris)
+table(iris$Species)
+datatry <- iris[iris$Species %in% c("versicolor",  "virginica"),]
+datatry$Species <- droplevels(datatry$Species)
+
+
+myfor <- party::cforest(Species ~ ., data = datatry, controls = cforest_unbiased(mtry = 2, ntree = 50))
+mycall <- quote(party::cforest(Species ~ ., data = datatry, controls = cforest_unbiased(mtry = 2, ntree = 50)))
+
+set.seed(1234)
+res <- setvimp(myfor, mycall, M = 150, type = "SPRT", test = "general", progressbar = FALSE, nperm = 3)
+# , varnames = c("pressure", "triceps", "pedigree")
+
+res
+
+summary(glm(Species ~ Sepal.Length, data=datatry, family="binomial"))
+summary(glm(Species ~ Sepal.Width, data=datatry, family="binomial"))
+summary(glm(Species ~ Petal.Length, data=datatry, family="binomial"))
+summary(glm(Species ~ Petal.Width, data=datatry, family="binomial"))
+
+library(ranger)
+res2 <- ranger(dependent.variable.name = "Species", data=datatry, num.trees = 10000, importance="permutation")
+res2$variable.importance
+
+summary(glm(Species ~ ., data=datatry, family="binomial"))
+
+
+library(parallel)
+library(pbapply)
+library(mlbench)
+source("R\\Setvimp_Code.R")
+source("R\\All_Methods_In_One_Code.R")
+
+# Prepare data
+data("PimaIndiansDiabetes2")
+mydat <- PimaIndiansDiabetes2[complete.cases(PimaIndiansDiabetes2), ]
+rm(PimaIndiansDiabetes2)
+
+# Export to clusters
+cl <- makeCluster(getOption("cl.cores", 20))
+clusterExport(cl, ls())
+invisible(clusterEvalQ(cl, library(party)))
+invisible(clusterEvalQ(cl, library(permimp)))
+
+# Save running time
+start <- Sys.time()
+
+# Set a seed
+set.seed(1234)
+
+### First part
+# Benchmark results
+sims <- 20
+bench <- pblapply(cl = cl, X = 1:sims, FUN = function(x) {
+  myfor <- party::cforest(diabetes ~ ., data = mydat, controls = cforest_unbiased(mtry = 3, ntree = 1000))
+  mycall <- quote(party::cforest(diabetes ~ ., data = mydat, controls = cforest_unbiased(mtry = 3, ntree = 1000)))
+
+  setvimp(myfor, mycall, M = 10000, varnames = c("pressure", "triceps", "pedigree"), type = "complete", test = "general", progressbar = FALSE, nperm = 3)
+
+
+myfor <- party::cforest(diabetes ~ ., data = mydat, controls = cforest_unbiased(mtry = 3, ntree = 500))
+mycall <- quote(party::cforest(diabetes ~ ., data = mydat, controls = cforest_unbiased(mtry = 3, ntree = 500)))
+
+allinone(myfor, mycall, varnames = c("pressure", "triceps", "pedigree"), nperm = 1)

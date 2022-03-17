@@ -1,0 +1,21 @@
+Package: rfvimptest
+Type: Package
+Title: Sequential Permutation Testing of Random Forest Variable Importance Measures
+Version: 0.1.0
+Date: 2022-03-16
+Author: Alexander Hapfelmeier [aut], Roman Hornung [aut, cre]
+Maintainer: Roman Hornung <hornung@ibe.med.uni-muenchen.de>
+Description: Sequential permutation testing for significant
+  influence of predictors in random forests. The main function
+  of the package is rfvimptest(), which allows to test for the
+  influence of predictors in random forests using different 
+  (sequential) permutation test strategies. The advantage of
+  sequential over conventional permutation tests is that they
+  are computationally considerably less intensive, as the sequential
+  procedure is stopped as soon as there is sufficient evidence
+  for either the null or the alternative hypothesis.
+License: GPL-3
+Imports: party, ranger, permimp
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
