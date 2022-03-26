@@ -54,7 +54,7 @@
 ##'   \item{\code{ntree}}{Number of trees per forest.}
 ##'   \item{\code{comptime}}{The time the computations needed.}
 ##' @examples
-##' \dontrun{
+##' \donttest{
 ##'
 ##' ## Load package:
 ##' library("rfvimptest")
