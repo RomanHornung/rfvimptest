@@ -1,6 +1,6 @@
-##' Apply all available (sequential) permutation testing approaches with one function call
+##' Apply all available (sequential) permutation testing approaches of variable importance measures with one function call
 ##'
-##' This is a helper function, which allows to perform all (sequential) permutation testing approaches described in \code{\link{rfvimptest}}
+##' This is a helper function, which allows to perform all (sequential) permutation testing approaches of variable importance measures described in \code{\link{rfvimptest}}
 ##' with a single function call. This may be useful for comparing the results obtained using the different approaches.
 ##' Importantly, this function is computationally efficient by re-using the permuted variable importance values obtained
 ##' for the conventional permutation test (that performs all \code{Mmax} permutations) for the other approaches. For details
@@ -10,16 +10,13 @@
 ##' @param yname Name of outcome variable.
 ##' @param Mmax Maximum number of permutations used in each permutation test. Default is 500.
 ##' @param varnames Optional. Names of the variables for which testing should be performed. By default all variables in \code{data} with the exception of the outcome variable are used.
-##' @param p0 The value of the p-value in the null hypothesis (H0) of SPRT and SAPT. Default is 0.06.
-##' @param p1 The value of the p-value in the alternative hypothesis (H1) of SPRT and SAPT. Default is 0.04.
-##' @param alpha The significance level of the tests. Default is 0.05.
-##' @param beta One minus the power of the tests. Also known as type II error. Default is 0.2.
-##' @param A The quantity A in the formula for the decision boundaries for H0 and H1 of the SAPT. Default is 0.1, which is usually not changed by the user.
-##' @param B The quantity B in the formula for the decision boundaries for H0 and H1 of the SAPT. Default is 10 (1/A), which is usually not changed by the user.
-##' @param h The quantity h in the formula for the sequential Monte Carlo p-value. For each considered independent variable, denote by d_m the number of
-##' variable importance values under permutation, that is, under H0, that are greater than or equal to
-##' the original variable importance value at stage m < Mmax of the sequential permutation test. The procedure
-##' will stop if d_m = h. The default value for h is 8. Larger values lead to more precise p-value estimates,
+##' @param p0 The value of the p-value in the null hypothesis (H0: p = p0) of SPRT and SAPT. Default is 0.06.
+##' @param p1 The value of the p-value in the alternative hypothesis (H1: p = p1) of SPRT and SAPT. Default is 0.04.
+##' @param alpha The significance level of SPRT when p = p0. Also known as type I error. Default is 0.05.
+##' @param beta One minus the power of SPRT when p = p1. Also known as type II error. Default is 0.2.
+##' @param A The quantity A in the formula of SAPT. Default is 0.1 for a type I error of 0.05. Usually not changed by the user.
+##' @param B The quantity B in the formula of SAPT. Default is 10 (1/A) for a type I error of 0.05. Usually not changed by the user.
+##' @param h The quantity h in the formula for the sequential Monte Carlo p-value. The default value for h is 8. Larger values lead to more precise p-value estimates,
 ##' but are computationally more expensive.
 ##' @param nperm The numbers of permutations of the out-of-bag observations over which the results are averaged, when calculating the variable importance measure values. Default is 1. Larger values than 1 can only be considered when \code{condinf=TRUE}, that is, when using random forests
 ##' with conditional inference trees (Hothorn et al., 2006) as base learners.
@@ -60,14 +57,14 @@
 ##' (ptest <- allinone(data=hearth2, yname="Class",  Mmax=20))
 ##'
 ##' # Variable importance values with p-values from the Monte Carlo p-value
-##' # and the complete approache:
+##' # and the complete approach:
 ##' ptest$varimp
 ##' ptest$pvalues$pval
 ##' ptest$pvalues$complete
 ##'
 ##'
-##' # When setting condinf=TRUE the results are obtained for all approaches
-##' # are obtained, that is, including those for the two-sample permutation tests
+##' # When setting condinf=TRUE the results are obtained for all approaches,
+##' # that is, including those for the two-sample permutation tests
 ##' # (in this illustration very small number of trees ntree=30 are used,
 ##' # in practice much larger numbers should be used; the default is ntree=500):
 ##' (ptest_ci <- allinone(data=hearth2, yname="Class", condinf=TRUE, ntree=30, Mmax=10))
@@ -82,6 +79,7 @@
 ##'   \item Coleman, T., Peng, W., Mentch, L. (2019). Scalable and efficient hypothesis testing with random forests. arXiv preprint arXiv:1904.07830, <\doi{10.48550/arXiv.1904.07830}>.
 ##'   \item Hapfelmeier, A., Hornung, R., Haller, B. (in prep.) Sequential Permutation Testing of Random Forest Variable Importance Measures.
 ##'   \item Hapfelmeier, A., Ulm, K. (2013). A new variable selection approach using Random Forests. CSDA 60:50–69, <\doi{10.1016/j.csda.2012.09.020}>.
+##'   \item Hapfelmeier, A., Hothorn, T., Ulm, K., Strobl, C. (2014). A new variable importance measure for random forests with missing data. Stat Comput 24:21–34, <\doi{10.1007/s11222-012-9349-1}>.
 ##'   \item Hothorn, T., Hornik, K., Zeileis, A. (2006). Unbiased Recursive Partitioning: A Conditional Inference Framework. J Comput Graph Stat 15(3):651–674, <\doi{10.1198/106186006X133933}>.
 ##'   \item Wright, M. N., Ziegler, A. (2017). ranger: A fast implementation of random forests for high dimensional data in C++ and R. J Stat Softw 77:1-17, <\doi{10.18637/jss.v077.i01}>.
 ##'   }
