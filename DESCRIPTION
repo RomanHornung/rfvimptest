@@ -1,7 +1,7 @@
 Package: rfvimptest
 Type: Package
 Title: Sequential Permutation Testing of Random Forest Variable Importance Measures
-Version: 0.1.0
+Version: 0.1.1
 Date: 2022-03-26
 Authors@R: c(person("Alexander", "Hapfelmeier", role = c("aut"),
                       email = "Alexander.Hapfelmeier@mri.tum.de"),
