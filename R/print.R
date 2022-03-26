@@ -3,7 +3,7 @@
 #' @export
 print.rfvimptest <- function(x, ...) {
   cat("\n")
-  cat("\t Result of (sequential) permutation tests for influence of predictors in random forests\n")
+  cat("\t Result of (sequential) permutation tests for statistical significance of predictors in random forests\n")
   cat("\n")
   cat("Type of test:                    ", x$testtype, "\n")
   cat("Number of tested variables:      ", length(x$varimp), "\n")
