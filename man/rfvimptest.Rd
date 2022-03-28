@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{rfvimptest}
 \alias{rfvimptest}
-\title{Testing the influence of predictors in random forests using sequential permutation testing}
+\title{Testing the statistical significance of predictors in random forests using sequential permutation testing}
 \usage{
 rfvimptest(
   data,
@@ -35,22 +35,19 @@ rfvimptest(
 
 \item{varnames}{Optional. Names of the variables for which testing should be performed. By default all variables in \code{data} with the exception of the outcome variable are used.}
 
-\item{p0}{The value of the p-value in the null hypothesis (H0) of SPRT and SAPT. Default is 0.06.}
+\item{p0}{The value of the p-value in the null hypothesis (H0: p = p0) of SPRT and SAPT. Default is 0.06.}
 
-\item{p1}{The value of the p-value in the alternative hypothesis (H1) of SPRT and SAPT. Default is 0.04.}
+\item{p1}{The value of the p-value in the alternative hypothesis (H1: p = p1) of SPRT and SAPT. Default is 0.04.}
 
-\item{alpha}{The significance level of the tests. Default is 0.05.}
+\item{alpha}{The significance level of SPRT when p = p0. Also known as type I error. Default is 0.05.}
 
-\item{beta}{One minus the power of the tests. Also known as type II error. Default is 0.2.}
+\item{beta}{One minus the power of SPRT when p = p1. Also known as type II error. Default is 0.2.}
 
-\item{A}{The quantity A in the formula for the decision boundaries for H0 and H1 of the SAPT. Default is 0.1, which is usually not changed by the user.}
+\item{A}{The quantity A in the formula of SAPT. Default is 0.1 for a type I error of 0.05. Usually not changed by the user.}
 
-\item{B}{The quantity B in the formula for the decision boundaries for H0 and H1 of the SAPT. Default is 10 (1/A), which is usually not changed by the user.}
+\item{B}{The quantity B in the formula of SAPT. Default is 10 (1/A) for a type I error of 0.05. Usually not changed by the user.}
 
-\item{h}{The quantity h in the formula for the sequential Monte Carlo p-value. For each considered independent variable, denote by d_m the number of
-variable importance values under permutation, that is, under H0, that are greater than or equal to
-the original variable importance value at stage m < Mmax of the sequential permutation test. The procedure
-will stop if d_m = h. The default value for h is 8. Larger values lead to more precise p-value estimates,
+\item{h}{The quantity h in the formula for the sequential Monte Carlo p-value. The default value for h is 8. Larger values lead to more precise p-value estimates,
 but are computationally more expensive.}
 
 \item{nperm}{The numbers of permutations of the out-of-bag observations over which the results are averaged, when calculating the variable importance measure values. Default is 1. Larger values than 1 can only be considered when \code{condinf=TRUE}, that is, when using random forests
@@ -85,28 +82,28 @@ Object of class \code{rfvimptest} with elements
   \item{\code{comptime}}{The time the computations needed.}
 }
 \description{
-Implements several strategies for testing for significant influence of predictors in random forests using sequential permutation testing procedures based on the permutation variable importance measure.
+Implements several strategies for testing the statistical significance of predictors in random forests using sequential permutation testing procedures based on the permutation variable importance measure.
 See Hapfelmeier et al. (2022) for details.
 }
 \details{
 Only the general permutation test (\code{test="general"}) controls the type I error. In contrast, the two-sample permutation test (\code{test="twosample"})
 is associated with inflated type I error, which can lead to false positive findings. An advantage of the two-sample permutation test is that it is
-very fast. Therefore, this experimental approach may be used as an informal screening tool for finding influential variables.
+very fast. Therefore, this experimental approach may be used as an informal screening tool for finding informative variables.
 It is, however, not a valid testing procedure. Note also that
 the paper of Coleman et al. (2019) on which the two-sample test is based has not yet been published in a peer-reviewed journal and that
 the theory underlying this procedure might thus still need further review.
 
-SRPT (\code{type="SRPT"}) and SAPT (\code{type="SAPT"}) are similar sequential procedures, where SRPT is faster with respect to accepting H0, that is, detecting non-influential variables,
-whereas SAPT is faster with respect to accepting H1, that is, detecting influential variables. Therefore, SRPT may be preferred for
-datasets with only few influential variables, whereas SAPT is preferable for datasets with high densities of influential variables.
+SRPT (\code{type="SRPT"}) and SAPT (\code{type="SAPT"}) are similar sequential procedures, where SRPT is faster with respect to accepting H0, that is, detecting non-informative variables,
+whereas SAPT is faster with respect to accepting H1, that is, detecting informative variables. Therefore, SRPT may be preferred for
+datasets with only few informative variables, whereas SAPT is preferable for datasets with many informative variables.
 The Monte Carlo p-value based testing procedure (\code{type="pval"}) should be used, when p-values are required.
 The choice \code{type="complete"} offers a conventional permutation test (that is, without sequential testing) (Hapfelmeier and Ulm, 2013). This choice
 is computationally the most intensive. Lastly, the choice \code{type="certain"} is similar to \code{type="complete"}, but performs
-early stopping by ending the permutation iterations as soon as it is certain, which outcome the conventional permutation test would
+early stopping by ending the permutation iterations as soon as it is certain which outcome the conventional permutation test would
 take. That is, \code{type="certain"} can be considered as a computationally more effective version of \code{type="complete"}.
 }
 \examples{
-\dontrun{
+\donttest{
 
 ## Load package:
 library("rfvimptest")
@@ -130,7 +127,7 @@ ptest_sprt$testres
 (ptest_pval <- rfvimptest(data=hearth2, yname="Class", type="pval", Mmax=20))
 ptest_pval$pvalues
 
-# If the frequency of influential variables is expected to be high SAPT can be used:
+# If the frequency of informative variables is expected to be high SAPT can be used:
 (ptest_sapt <- rfvimptest(data=hearth2, yname="Class", type="SAPT", Mmax=20))
 ptest_sapt$testres
 
@@ -146,7 +143,7 @@ ptest_twovar$testres
 
 # Two-sample permutation test procedures:
 
-# NOTE: These should be used only for informal screening for influential variables.
+# NOTE: These should be used only for informal screening for informative variables.
 # They are not valid statistical tests.
 
 # Here, the maximum number of permutations can be much higher because it is necessary
@@ -166,6 +163,7 @@ rfvimptest(data=hearth2, yname="Class", test="twosample", type="SAPT", condinf=T
   \item Coleman, T., Peng, W., Mentch, L. (2019). Scalable and efficient hypothesis testing with random forests. arXiv preprint arXiv:1904.07830, <\doi{10.48550/arXiv.1904.07830}>.
   \item Hapfelmeier, A., Hornung, R., Haller, B. (in prep.) Sequential Permutation Testing of Random Forest Variable Importance Measures.
   \item Hapfelmeier, A., Ulm, K. (2013). A new variable selection approach using Random Forests. CSDA 60:50–69, <\doi{10.1016/j.csda.2012.09.020}>.
+  \item Hapfelmeier, A., Hothorn, T., Ulm, K., Strobl, C. (2014). A new variable importance measure for random forests with missing data. Stat Comput 24:21–34, <\doi{10.1007/s11222-012-9349-1}>.
   \item Hothorn, T., Hornik, K., Zeileis, A. (2006). Unbiased Recursive Partitioning: A Conditional Inference Framework. J Comput Graph Stat 15(3):651–674, <\doi{10.1198/106186006X133933}>.
   \item Wright, M. N., Ziegler, A. (2017). ranger: A fast implementation of random forests for high dimensional data in C++ and R. J Stat Softw 77:1-17, <\doi{10.18637/jss.v077.i01}>.
   }
