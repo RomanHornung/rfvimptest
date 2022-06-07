@@ -1,8 +1,8 @@
 Package: rfvimptest
 Type: Package
 Title: Sequential Permutation Testing of Random Forest Variable Importance Measures
-Version: 0.1.1
-Date: 2022-03-28
+Version: 0.1.2
+Date: 2022-06-07
 Authors@R: c(person("Alexander", "Hapfelmeier", role = c("aut"),
                       email = "Alexander.Hapfelmeier@mri.tum.de"),
              person("Roman", "Hornung", role = c("aut", "cre"), 
@@ -17,6 +17,7 @@ Description: Sequential permutation testing for statistical
   procedure is stopped as soon as there is sufficient evidence
   for either the null or the alternative hypothesis.
 License: GPL-3
+Depends: R (>= 3.5.0)
 Imports: party, ranger, permimp
 Encoding: UTF-8
 LazyData: true
