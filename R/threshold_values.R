@@ -6,13 +6,13 @@
 ##' 
 ##' The function and examples are intended to support the use of SPRT, SAPT and sequential p-values for any type of modelling approach, even outside the application in \code{rfvimptest::rfvimptest()}.
 ##'
-##' @param Mmax Maximum number of permutations used in each permutation test. Default is 500.
 ##' @param p0 The value of the p-value in the null hypothesis (H0: p = p0) of SPRT and SAPT. Default is 0.06.
 ##' @param p1 The value of the p-value in the alternative hypothesis (H1: p = p1) of SPRT and SAPT. Default is 0.04.
 ##' @param alpha The significance level of SPRT when p = p0. Also known as type I error. Default is 0.05.
 ##' @param beta One minus the power of SPRT when p = p1. Also known as type II error. Default is 0.2.
 ##' @param A The quantity A in the formula of SAPT. Default is 0.1 for a type I error of 0.05. Usually not changed by the user.
 ##' @param B The quantity B in the formula of SAPT. Default is 10 (1/A) for a type I error of 0.05. Usually not changed by the user.
+##' @param Mmax Maximum number of permutations used in each permutation test. Default is 500.
 ##' @param type Type of the sequential test method. The choices are "SPRT" and "SAPT".
 ##' @return List of two vectors, each containing \code(Mmax) threshold values for the number of cumulative successes a sequential permutation test of \code{type="SRPT"} or \code{type="SAPT"} needs to show in order to "keep H0" or "accept H1" early in the sequence of tests.
 ##' @examples
