@@ -143,20 +143,9 @@ rfvimptest <- function(data, yname, Mmax = 500, varnames = NULL, p0 = 0.06, p1 =
 
   if (progressbar) pb <- txtProgressBar(min = 1, max = Mmax, initial = 1, width = 10, style = 3, char = "|")
 
-  if (type == "SPRT") {
-    A <- beta / (1 - alpha)
-    B <- (1 - beta) / alpha
-  }
-  if (type %in% c("SPRT", "SAPT")) {
-    logA <- log(A)
-    logB <- log(B)
-    help1 <- log((1 - p0) / (1 - p1))
-    help2 <- log((p1 * (1 - p0)) / (p0 * (1 - p1)))
-  }
-
   stop_crits <- switch(type,
-                       SPRT = list((logA + 1:Mmax * help1) / help2, (logB + 1:Mmax * help1) / help2),
-                       SAPT = list((logA + 1:Mmax * help1) / help2, (logB + 1:Mmax * help1) / help2),
+                       SPRT = threshold_values(p0 = p0, p1 = p1, alpha = alpha, beta = beta, Mmax = Mmax, type = "SPRT"),
+                       SAPT = threshold_values(p0 = p0, p1 = p1, A = A, B = B, Mmax = Mmax, type = "SAPT"),
                        pval = list(rep(h, times = Mmax), rep(h, times = Mmax)),
                        certain = list(rep(alpha*Mmax, times = Mmax), Mmax*alpha - Mmax + 1:Mmax),
                        complete = NULL)
