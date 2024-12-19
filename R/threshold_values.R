@@ -1,6 +1,6 @@
 ##' Threshold values of a SPRT and SAPT, and calculation of sequential Monte Carlo p-values
 ##'
-##' Function to produce threshold for the number of cumulative successes a sequential permutation test of \code{type="SRPT"} or \code{type="SAPT"} needs to show in order to "keep H0" or "accept H1" early in the sequence of tests.
+##' Function to produce threshold values for the number of cumulative successes a sequential permutation test of \code{type="SRPT"} or \code{type="SAPT"} needs to show in order to "keep H0" or "accept H1" early in the sequence of tests.
 ##' 
 ##' An example of how to calculate sequential Monte Carlo p-values is also given.
 ##' 
