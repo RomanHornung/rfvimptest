@@ -10,8 +10,8 @@
 ##' the paper of Coleman et al. (2019) on which the two-sample test is based has not yet been published in a peer-reviewed journal and that
 ##' the theory underlying this procedure might thus still need further review.
 ##'
-##' SRPT (\code{type="SRPT"}) and SAPT (\code{type="SAPT"}) are similar sequential procedures, where SRPT is faster with respect to accepting H0, that is, detecting non-informative variables,
-##' whereas SAPT is faster with respect to accepting H1, that is, detecting informative variables. Therefore, SRPT may be preferred for
+##' SPRT (\code{type="SPRT"}) and SAPT (\code{type="SAPT"}) are similar sequential procedures, where SPRT is faster with respect to accepting H0, that is, detecting non-informative variables,
+##' whereas SAPT is faster with respect to accepting H1, that is, detecting informative variables. Therefore, SPRT may be preferred for
 ##' datasets with only few informative variables, whereas SAPT is preferable for datasets with many informative variables.
 ##' The Monte Carlo p-value based testing procedure (\code{type="pval"}) should be used, when p-values are required.
 ##' The choice \code{type="complete"} offers a conventional permutation test (that is, without sequential testing) (Hapfelmeier and Ulm, 2013). This choice
@@ -143,20 +143,9 @@ rfvimptest <- function(data, yname, Mmax = 500, varnames = NULL, p0 = 0.06, p1 =
 
   if (progressbar) pb <- txtProgressBar(min = 1, max = Mmax, initial = 1, width = 10, style = 3, char = "|")
 
-  if (type == "SPRT") {
-    A <- beta / (1 - alpha)
-    B <- (1 - beta) / alpha
-  }
-  if (type %in% c("SPRT", "SAPT")) {
-    logA <- log(A)
-    logB <- log(B)
-    help1 <- log((1 - p0) / (1 - p1))
-    help2 <- log((p1 * (1 - p0)) / (p0 * (1 - p1)))
-  }
-
   stop_crits <- switch(type,
-                       SPRT = list((logA + 1:Mmax * help1) / help2, (logB + 1:Mmax * help1) / help2),
-                       SAPT = list((logA + 1:Mmax * help1) / help2, (logB + 1:Mmax * help1) / help2),
+                       SPRT = threshold_values(p0 = p0, p1 = p1, alpha = alpha, beta = beta, Mmax = Mmax, type = "SPRT"),
+                       SAPT = threshold_values(p0 = p0, p1 = p1, A = A, B = B, Mmax = Mmax, type = "SAPT"),
                        pval = list(rep(h, times = Mmax), rep(h, times = Mmax)),
                        certain = list(rep(alpha*Mmax, times = Mmax), Mmax*alpha - Mmax + 1:Mmax),
                        complete = NULL)
