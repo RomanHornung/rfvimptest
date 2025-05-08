@@ -34,7 +34,7 @@ threshold_values(
 \item{type}{Type of the sequential test method. The choices are "SPRT" and "SAPT".}
 }
 \value{
-List of two vectors, each containing \code(Mmax) threshold values for the number of cumulative successes a sequential permutation test of \code{type="SRPT"} or \code{type="SAPT"} needs to show in order to "keep H0" or "accept H1" early in the sequence of tests.
+List of two vectors, each containing \code{Mmax} threshold values for the number of cumulative successes a sequential permutation test of \code{type="SRPT"} or \code{type="SAPT"} needs to show in order to "keep H0" or "accept H1" early in the sequence of tests.
 }
 \description{
 Function to produce threshold values for the number of cumulative successes a sequential permutation test of \code{type="SRPT"} or \code{type="SAPT"} needs to show in order to "keep H0" or "accept H1" early in the sequence of tests.
@@ -47,6 +47,13 @@ The function and examples are intended to support the use of SPRT, SAPT and sequ
 \examples{
 \donttest{
 
+## Load package:
+library("rfvimptest")
+
+## Set seed to obtain reproducible results:
+set.seed(1234)
+
+
 # Load example data
 data(hearth2)
 
@@ -54,14 +61,15 @@ data(hearth2)
 # Calculation of a SAPT
 
 # Create critical values for a SAPT
-myvals <- critical_values(p0 = 0.06, p1 = 0.04, A = 0.1, B = 10, Mmax = 200, type = "SAPT")
+myvals <- threshold_values(p0 = 0.06, p1 = 0.04, A = 0.1, B = 10, Mmax = 200, type = "SAPT")
 myvals
 
 # Fit a model to the original data
 mod <- glm(I(Class == 2) ~ ., data = hearth2)
 summary(mod)
 
-# Derive a statistic of interest from the model. Here, the negative AIC is used as a statistic to be maximised.
+# Derive a statistic of interest from the model. Here, the negative AIC is used as a statistic
+# to be maximised.
 stat <- -1 * mod$aic
 
 # Perform the permutations, extract the statistics and stop early according to the critical values
@@ -92,7 +100,7 @@ sapply(myresult, function(x) {
 
 # Calculation of sequential Monte Carlo p-values
 
-h <- 10 # Parameter h of the sequential Monte Carlo p-value calculation. 
+h <- 10 # Parameter h of the sequential Monte Carlo p-value calculation.
 
 # Perform the permutations, extract the statistics and stop early when h successes are reached
 mypvals <- sapply(setdiff(names(hearth2), "Class"), function(j) {
@@ -103,7 +111,7 @@ mypvals <- sapply(setdiff(names(hearth2), "Class"), function(j) {
     permdat[, j] <- sample(permdat[, j])
     permstats <- c(permstats, -1 * glm(I(Class == 2) ~ ., data = permdat)$aic)
     d <- sum(permstats >= stat)
-    if (d == h) {pval <- d/length(permstats); m <- i; break} 
+    if (d == h) {pval <- d/length(permstats); m <- i; break}
     else if (i == Mmax) {pval <- (d + 1)/(Mmax + 1); m <- i}
   }
   c(pval, m)
