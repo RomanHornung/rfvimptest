@@ -93,8 +93,8 @@ It is, however, not a valid testing procedure. Note also that
 the paper of Coleman et al. (2019) on which the two-sample test is based has not yet been published in a peer-reviewed journal and that
 the theory underlying this procedure might thus still need further review.
 
-SRPT (\code{type="SRPT"}) and SAPT (\code{type="SAPT"}) are similar sequential procedures, where SRPT is faster with respect to accepting H0, that is, detecting non-informative variables,
-whereas SAPT is faster with respect to accepting H1, that is, detecting informative variables. Therefore, SRPT may be preferred for
+SPRT (\code{type="SPRT"}) and SAPT (\code{type="SAPT"}) are similar sequential procedures, where SPRT is faster with respect to accepting H0, that is, detecting non-informative variables,
+whereas SAPT is faster with respect to accepting H1, that is, detecting informative variables. Therefore, SPRT may be preferred for
 datasets with only few informative variables, whereas SAPT is preferable for datasets with many informative variables.
 The Monte Carlo p-value based testing procedure (\code{type="pval"}) should be used, when p-values are required.
 The choice \code{type="complete"} offers a conventional permutation test (that is, without sequential testing) (Hapfelmeier and Ulm, 2013). This choice
